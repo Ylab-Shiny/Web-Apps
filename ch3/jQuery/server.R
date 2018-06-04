@@ -4,8 +4,6 @@
 
 library(shiny)
 
-addResourcePath("shinyjs", system.file("srcjs", package = "shinyjs"))
-
 shinyServer(function(input, output) {
   output$dataset <- renderTable({
     theData = switch (input$dataset,
