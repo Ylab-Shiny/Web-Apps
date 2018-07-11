@@ -23,24 +23,27 @@ shinyUI(fluidPage( # 柔軟なユーザーインターフェースのセット�
                                   "ユーザー数" = "users",
                                   "セッション数" = "sessions")),
       
-      checkboxInput("smooth", label = "平滑線を表示しますか？", # 平滑線を加える
-                    value = F),
+      conditionalPanel(
+        condition = "input.theTabs == 'trend'",
+        checkboxInput("smooth", label = "平滑線を表示しますか？", # 平滑化
+                      value = F)),
       
-      sliderInput("animation", "時間経過によるトレンド",
-                  min = 0, max = 80, value = 0, step = 5,
-                  animate = animationOptions(interval = 1000, loop = T))
+      conditionalPanel(
+        condition = "input.theTabs == 'animated'",
+        sliderInput("animation", "トレンドの経過",
+                    min = 0, max = 80, value = 0, step = 5,
+                    animate = animationOptions(interval = 1000, loop = T)))
       
-      ), # サイドバーパネルの最終部分
+    ), ### サイドバーパネルの最終部分 ###
+    
     mainPanel( # メインパネル部分
-      id = "theTabs", # タブパネルに名前を付与
-      tabsetPanel( # タブ出力のセットアップ
-        tabPanel("集計", textOutput("textDisplay"), value = "summary"),
-        tabPanel("トレンド", plotOutput("trend"), value = "trend"),
-        tabPanel("アニメーション", plotOutput("animated"), value = "animated"),
-        tabPanel("地図", plotOutput("ggplotMap"), value = "map"),
-        tabPanel("データフレーム",
-                 DT::dataTableOutput("countryTable"), value = "table")
-        )
+      tabsetPanel(id = "theTabs", # タブパネルに名前を付与
+                  tabPanel("集計", textOutput("textDisplay"), value = "summary"),
+                  tabPanel("トレンド", plotOutput("trend"), value = "trend"),
+                  tabPanel("アニメーション", plotOutput("animated"), value = "animated"),
+                  tabPanel("地図", plotOutput("ggplotMap"), value = "map"),
+                  tabPanel("データフレーム", DT::dataTableOutput("countryTable"), value = "table")
       )
     )
-  ))
+  )
+))
