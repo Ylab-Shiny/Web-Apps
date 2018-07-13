@@ -46,7 +46,9 @@ shinyUI(fluidPage( # 柔軟なユーザーインターフェースのセット�
     mainPanel( # メインパネル部分
       tabsetPanel(id = "theTabs", # タブパネルに名前を付与
                   tabPanel("集計", textOutput("textDisplay"), value = "summary"),
-                  tabPanel("トレンド", plotOutput("trend"), value = "trend"),
+                  tabPanel("トレンド", plotOutput("trend"), 
+                           downloadButton("downloadData.trend", "描画図の保存"),
+                           value = "trend"),
                   tabPanel("アニメーション", plotOutput("animated"), value = "animated"),
                   tabPanel("地図", plotOutput("ggplotMap"), value = "map"),
                   tabPanel("データフレーム", DT::dataTableOutput("countryTable"), value = "table")
