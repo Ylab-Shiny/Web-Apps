@@ -7,7 +7,7 @@ library(rgdal)
 library(RColorBrewer)
 library(shiny)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   load("gadf.Rdata")
   
   # 反応性のあるデータ
@@ -79,30 +79,81 @@ shinyServer(function(input, output) {
                     method = "lm", color = "black")
     })
     
-    output$ggplotMap <- renderPlot({
+    output$countryTable <- DT::renderDataTable({
       groupCountry <- group_by(passData(), country)
-      groupByCountry <- summarise(groupCountry, 
+      groupByCountry <- summarise(groupCountry,
                                   meanSession = mean(sessionDuration),
                                   users = log(sum(users)),
                                   sessions = log(sum(sessions))
                                   )
-      
-      world <- readOGR(dsn = ".",
-                       layer = "world_country_admin_boundary_shapefile_with_fips_codes")
-      countries <- world@data
-      countries <- cbind(id = rownames(countries), countries)
-      countries <- merge(countries, groupByCountry,
-                         by.x = "CNTRY_NAME",
-                         by.y = "country", all.x = T)
-      map.df <- fortify(world)
-      map.df <- merge(map.df, countries, by = "id")
-      
-      ggplot(map.df, aes(x = long, y = lat, group = group)) +
-        geom_polygon(aes_string(fill = input$outputRequired)) +
-        geom_path(color = "grey50") +
-        scale_fill_gradientn(colors = rev(brewer.pal(9, "Spectral")),
-                             na.value = "white") +
-        coord_fixed() + labs(x = "", y = "")
+      DT::datatable(groupByCountry)
     })
+    
+    observe({
+      if(input$theTabs == "map") { ## タブ"地図"を選択したときに、チェックボックスを埋めておく ##
+        updateCheckboxGroupInput(session, "domainShow",
+                                 choices = list(
+                                   "NHS" = "nhs.uk",
+                                   "other domain" = "Other"
+                                 ),
+                                 selected = c("nhs.uk", "Other"))
+      }
+    })
+    
+    output$reactCountries <- renderUI({
+      countryList = unique(as.character(passData()$country))
+      selectInput("theCountries", "国名を選択してください", countryList)
+    })
+    
+    output$ggplotMap <- renderPlot({
+      
+      input$drawMap # actionButtonに依存する
+      
+      withProgress(message = 'お待ちください',
+                   detail = '地図を描いています...', value = 0, {
+                     
+                     if(length(unique(as.character(passData()$country))) < 2) {
+                       return()
+                     }
+                     
+                     groupCountry <- isolate( # データ依存性を回避する
+                       group_by(passData(), country)
+                     )
+                     
+                     
+                     groupByCountry <- summarise(groupCountry, 
+                                                 meanSession = mean(sessionDuration),
+                                                 users = log(sum(users)),
+                                                 sessions = log(sum(sessions))
+                     )
+                     
+                     world <- readOGR(dsn = ".",
+                                      layer = "world_country_admin_boundary_shapefile_with_fips_codes")
+                     
+                     incProgress(1/3)
+                     
+                     countries <- world@data
+                     countries <- cbind(id = rownames(countries), countries)
+                     countries <- merge(countries, groupByCountry,
+                                        by.x = "CNTRY_NAME",
+                                        by.y = "country", all.x = T)
+                     map.df <- fortify(world)
+                     
+                     incProgress(1/3)
+                     
+                     map.df <- merge(map.df, countries, by = "id")
+                     
+                     incProgress(1/3)
+                     
+                     ggplot(map.df, aes(x = long, y = lat, group = group)) +
+                       geom_polygon(aes_string(fill = input$outputRequired)) +
+                       geom_path(color = "grey50") +
+                       scale_fill_gradientn(colors = rev(brewer.pal(9, "Spectral")),
+                                            na.value = "white") +
+                       coord_fixed() + labs(x = "", y = "")
+                     
+                   })
+   
+      })
   })
 })

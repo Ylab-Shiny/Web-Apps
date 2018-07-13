@@ -23,6 +23,8 @@ shinyUI(fluidPage( # 柔軟なユーザーインターフェースのセット�
                                   "ユーザー数" = "users",
                                   "セッション数" = "sessions")),
       
+      uiOutput("reactCountries"),
+      
       conditionalPanel(
         condition = "input.theTabs == 'trend'",
         checkboxInput("smooth", label = "平滑線を表示しますか？", # 平滑化
@@ -32,7 +34,12 @@ shinyUI(fluidPage( # 柔軟なユーザーインターフェースのセット�
         condition = "input.theTabs == 'animated'",
         sliderInput("animation", "トレンドの経過",
                     min = 0, max = 80, value = 0, step = 5,
-                    animate = animationOptions(interval = 1000, loop = T)))
+                    animate = animationOptions(interval = 1000, loop = T))
+        ),
+      
+      hr(),
+      
+      actionButton("drawMap", "地図の更新")
       
     ), ### サイドバーパネルの最終部分 ###
     
