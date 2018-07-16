@@ -5,11 +5,16 @@ library(dplyr)
 library(ggplot2)
 library(rgdal)
 library(RColorBrewer)
+library(ggvis)
 library(shiny)
 library(DT)
+library(knitr)
+library(rmarkdown)
+
+load("gadf.Rdata")
+options(shiny.launch.browser = T)
 
 shinyServer(function(input, output, session) {
-  load("gadf.Rdata")
   
   # 反応性のあるデータ
   passData <- reactive({
@@ -18,6 +23,7 @@ shinyServer(function(input, output, session) {
                           date <= input$dateRange[2])
     
     if(!is.null(input$domainShow)) {
+      
       firstData <- filter(firstData, networkDomain %in%
                             input$domainShow)
     }
@@ -48,8 +54,9 @@ shinyServer(function(input, output, session) {
         updateCheckboxInput(session, inputId = "smooth", value = T)
       }
     }
-    })
+    }) ### observeの最終部分 ###
   
+  ## テキストの集計 ##
   output$textDisplay <- renderText({
     paste(
       length(seq.Date(input$dateRange[1], input$dateRange[2], by = "days")),
@@ -62,7 +69,7 @@ shinyServer(function(input, output, session) {
   trendGragh <- reactive({
     if(!is.null(input$theCountries)) {
       
-      graghData <- filter(passData(), country %in% input$theCountries)
+      graghData <- dplyr::filter(passData(), country %in% input$theCountries)
       
     } else {
       
@@ -70,7 +77,7 @@ shinyServer(function(input, output, session) {
       
     }
     
-    groupByDate <- group_by(passData(), YearMonth, networkDomain) %>% 
+    groupByDate <- group_by(graghData, YearMonth, networkDomain) %>% 
       summarise(meanSession = mean(sessionDuration, na.rm = T),
                 users = sum(users),
                 newUsers = sum(newUsers),
@@ -85,7 +92,7 @@ shinyServer(function(input, output, session) {
                                  y = input$outputRequired,
                                  group = "networkDomain",
                                  color = "networkDomain"
-                      )) + geom_line()
+                      )) + geom_path()
     
     if(input$smooth) {
       thePlot <- thePlot + geom_smooth()
@@ -116,11 +123,12 @@ shinyServer(function(input, output, session) {
     ggplot(groupByDate, aes_string(x = "Date",
                                    y = input$outputRequired,
                                    group = "networkDomain",
-                                   color = "networkDomain")) + geom_line() +
+                                   color = "networkDomain")) + geom_path() +
       geom_smooth(data = smoothData,
                   method = "lm", color = "black")
   }) ### animatedの最終部分 ###
   
+  ## データフレームの生産 ##
   output$countryTable <- DT::renderDataTable({
     groupCountry <- group_by(passData(), country)
     groupByCountry <- summarise(groupCountry,
@@ -130,6 +138,13 @@ shinyServer(function(input, output, session) {
     )
     DT::datatable(groupByCountry)
   }) ### countryTableの最終部分 ###
+  
+  output$reactCountries <- renderUI({
+    countryList = unique(as.character(passData()$country))
+    
+    selectInput("theCountries", "国名を選択してください", countryList,
+                multiple = T)
+  }) ### reactCountriesの最終部分 ###
   
   ## タブ"地図"を選択したときに、チェックボックスを埋めておく ##
   observe({
@@ -141,13 +156,9 @@ shinyServer(function(input, output, session) {
                                ),
                                selected = c("nhs.uk", "Other"))
     }
-  }) 
+  }) ### observeの最終部分 ###
   
-  output$reactCountries <- renderUI({
-    countryList = unique(as.character(passData()$country))
-    selectInput("theCountries", "国名を選択してください", countryList)
-  }) ### reactCountriesの最終部分 ###
-  
+  ## 地図の生産 ##
   output$ggplotMap <- renderPlot({
     
     input$drawMap # actionButtonに依存する
@@ -185,6 +196,7 @@ shinyServer(function(input, output, session) {
                    incProgress(1/3)
                    
                    map.df <- merge(map.df, countries, by = "id")
+                   checkInputs <- "No"
                    
                    incProgress(1/3)
                    
@@ -198,10 +210,21 @@ shinyServer(function(input, output, session) {
                  })
   }) ### ggplotMapの最終部分 ###
   
+  ### レポートのダウンロード ###
+  output$downloadDoc <-
+    downloadHandler(filename = "Report.html",
+                    content = function(file) {
+                      knitr::knit2html("Report.Rmd")
+                      
+                      # レポートドキュメントを'file'にコピーする
+                      file.copy("Report.html", file, overwrite = T)
+                    })
+  
+  
   ## 描画図のダウンロード ##
   output$downloadData.trend <- downloadHandler(contentType = 'image/png',
     filename <- function() {
-      paste("トレンドグラフ", Sys.Date(), ".png", sep="")
+      paste("TrendGragh", Sys.Date(), ".png", sep="")
       },
     
     content <- function(file) {

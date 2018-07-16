@@ -1,9 +1,13 @@
-# まとめレポート
-## 集計データについて
-このレポートは`r strftime(input$dateRange[1], format = "%d %B %Y")`から
-`r strftime(input$dateRange[2], format = "%d %B %Y")`の間に集計されたデータによるものです。
+# Summary report
 
-## トレンドグラフ
+## Text summary
+
+This report summarises data between `r strftime(input$dateRange[1], format = "%Y %m %d")` and `r strftime(input$dateRange[2], format = "%Y %m %d")`.
+
+## Trend graph
+
 ```{r fig.width=7, fig.height=6, echo=FALSE}
+
 trendGragh()
+
 ```
