@@ -6,6 +6,7 @@ library(ggplot2)
 library(rgdal)
 library(RColorBrewer)
 library(shiny)
+library(DT)
 
 shinyServer(function(input, output, session) {
   load("gadf.Rdata")
