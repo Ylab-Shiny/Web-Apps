@@ -55,7 +55,8 @@ shinyUI(fluidPage( # 柔軟なユーザーインターフェースのセット�
                            value = "trend"),
                   tabPanel("アニメーション", plotOutput("animated"), value = "animated"),
                   tabPanel("地図", plotOutput("ggplotMap"), value = "map"),
-                  tabPanel("データフレーム", DT::dataTableOutput("countryTable"), value = "table")
+                  tabPanel("データフレーム", DT::dataTableOutput("countryTable"), 
+                           downloadButton("downloadData", "データセットのダウンロード"), value = "table")
       )
     )
   )

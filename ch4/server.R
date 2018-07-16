@@ -10,6 +10,7 @@ library(shiny)
 library(DT)
 library(knitr)
 library(rmarkdown)
+library(readr)
 
 load("gadf.Rdata")
 options(shiny.launch.browser = T)
@@ -238,5 +239,16 @@ shinyServer(function(input, output, session) {
       
       dev.off()
       }) ### downloadData.trendの最終部分 ###
+  
+  ## データセットのダウンロード ##
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      "Dataset.csv"
+    },
+    
+    content <- function(file) {
+      readr::write_excel_csv(passData(), file)
+    }
+  )
   
   })
