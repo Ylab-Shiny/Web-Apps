@@ -319,7 +319,7 @@ shinyServer(function(input, output, session){
         
         # レポートドキュメントを'file'にコピーする
         file.copy("Report.html", file, overwrite = T)
-        })
+        }) ### downloadDocの最終部分
   
   ## 描画図のダウンロード 
   output$downloadData.trend <- downloadHandler(
